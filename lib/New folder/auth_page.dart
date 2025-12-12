@@ -18,7 +18,7 @@ class _AuthPageState extends ConsumerState<AuthPage>
   late TabController _tabController;
 
   // LOGIN (user + admin)
-  final loginIdC = TextEditingController(); // Email (User) / Username (Admin)
+  final loginIdC = TextEditingController();   // Email (User) / Username (Admin)
   final loginPassC = TextEditingController();
 
   // REGISTER (user)
@@ -50,71 +50,59 @@ class _AuthPageState extends ConsumerState<AuthPage>
     super.dispose();
   }
 
-  void _showSnack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg)),
-    );
-  }
-
   // LOGIN: kalau mengandung @ -> user, kalau tidak -> admin
   Future<void> _doLogin() async {
     final id = loginIdC.text.trim();
     final pass = loginPassC.text.trim();
 
     if (id.isEmpty || pass.isEmpty) {
-      _showSnack('Isi email/username dan password');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Isi email/username dan password')),
+      );
       return;
     }
 
     setState(() => loading = true);
 
-    try {
-      if (id.contains('@')) {
-        // login sebagai user (email)
-        final ok = await ref.read(userAuthProvider.notifier).login(
-              email: id,
-              password: pass,
-            );
+    if (id.contains('@')) {
+      // login sebagai user (email)
+      final msg = await ref.read(userAuthProvider.notifier).login(
+            email: id,
+            password: pass,
+          );
 
-        setState(() => loading = false);
-
-        if (!ok) {
-          final msg = ref.read(userAuthProvider.notifier).errorMessage ??
-              'Login user gagal. Cek email dan password.';
-          _showSnack(msg);
-          return;
-        }
-
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
-        );
-      } else {
-        // login sebagai admin (username)
-        final ok = await ref.read(adminAuthProvider.notifier).login(
-              username: id,
-              password: pass,
-            );
-
-        setState(() => loading = false);
-
-        if (!ok) {
-          final msg = ref.read(adminAuthProvider.notifier).errorMessage ??
-              'Login admin gagal. Cek username dan password.';
-          _showSnack(msg);
-          return;
-        }
-
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
-        );
-      }
-    } catch (e) {
       setState(() => loading = false);
-      _showSnack('Terjadi kesalahan: $e');
+
+      if (msg != null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg)));
+        return;
+      }
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
+    } else {
+      // login sebagai admin (username)
+      final success =
+          await ref.read(adminAuthProvider.notifier).login(id, pass);
+
+      setState(() => loading = false);
+
+      if (!success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login gagal. Cek email/username dan password.'),
+          ),
+        );
+        return;
+      }
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
+      );
     }
   }
 
@@ -131,41 +119,38 @@ class _AuthPageState extends ConsumerState<AuthPage>
         phone.isEmpty ||
         pass.isEmpty ||
         address.isEmpty) {
-      _showSnack('Semua field register wajib diisi');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Semua field register wajib diisi')),
+      );
       return;
     }
 
     setState(() => loading = true);
 
-    try {
-      final ok = await ref.read(userAuthProvider.notifier).register(
-            name: name,
-            email: email,
-            password: pass,
-            phone: phone,
-            address: address,
-          );
+    final msg = await ref.read(userAuthProvider.notifier).register(
+          name: name,
+          email: email,
+          password: pass,
+          phone: phone,
+          address: address,
+        );
 
-      setState(() => loading = false);
+    setState(() => loading = false);
 
-      if (!ok) {
-        final msg = ref.read(userAuthProvider.notifier).errorMessage ??
-            'Registrasi gagal. Coba lagi.';
-        _showSnack(msg);
-        return;
-      }
-
-      _showSnack('Registrasi berhasil, Anda sudah login');
-
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
-      );
-    } catch (e) {
-      setState(() => loading = false);
-      _showSnack('Terjadi kesalahan: $e');
+    if (msg != null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(msg)));
+      return;
     }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Registrasi berhasil, Anda sudah login')),
+    );
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const HomePage()),
+    );
   }
 
   @override
@@ -218,11 +203,7 @@ class _AuthPageState extends ConsumerState<AuthPage>
             child: ElevatedButton(
               onPressed: loading ? null : _doLogin,
               child: loading
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                  ? const CircularProgressIndicator()
                   : const Text('Login'),
             ),
           ),
@@ -286,11 +267,7 @@ class _AuthPageState extends ConsumerState<AuthPage>
               child: ElevatedButton(
                 onPressed: loading ? null : _doRegister,
                 child: loading
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                    ? const CircularProgressIndicator()
                     : const Text('Register'),
               ),
             ),

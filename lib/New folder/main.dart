@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'pages/awal_page.dart';
+import 'pages/auth_page.dart';
 
 void main() {
   runApp(const ProviderScope(child: LaundryApp()));
@@ -18,7 +18,7 @@ class LaundryApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
-      home: const AwalPage(),
+      home: const AuthPage(), // 1 halaman awal
     );
   }
 }
